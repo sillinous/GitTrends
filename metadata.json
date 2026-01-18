@@ -1,0 +1,5 @@
+{
+  "name": "GitTrend AI Portfolio",
+  "description": "An AI-powered portfolio generator that curates top trending GitHub repositories based on topics and timeframes using Gemini Search Grounding.",
+  "requestFramePermissions": []
+}
