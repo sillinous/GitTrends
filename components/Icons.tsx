@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Github, 
@@ -29,7 +30,21 @@ import {
   Hash,
   Briefcase,
   Share2,
-  Film // Added Film icon
+  Film,
+  Layout,
+  Sparkles,
+  Cpu,
+  Map,
+  Hammer,
+  Layers,
+  Rocket,
+  ShieldCheck,
+  TrendingDown,
+  DollarSign,
+  Users,
+  PieChart as PieChartIcon,
+  Presentation,
+  AlertCircle
 } from 'lucide-react';
 
 export { 
@@ -62,5 +77,19 @@ export {
   Hash,
   Briefcase,
   Share2,
-  Film // Export Film icon
+  Film,
+  Layout,
+  Sparkles,
+  Cpu,
+  Map,
+  Hammer,
+  Layers,
+  Rocket,
+  ShieldCheck,
+  TrendingDown,
+  DollarSign,
+  Users,
+  PieChartIcon,
+  Presentation,
+  AlertCircle
 };
