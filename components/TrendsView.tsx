@@ -1,7 +1,8 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Repository, PortfolioItem } from '../types';
 import RepoCard from './RepoCard';
-import { TrendingUp } from './Icons';
+import { TrendingUp, ChevronDown } from './Icons';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface TrendsViewProps {
@@ -23,6 +24,7 @@ const TrendsView: React.FC<TrendsViewProps> = ({
   summary,
   topic
 }) => {
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   
   // Calculate language distribution for chart
   const languageData = React.useMemo(() => {
@@ -41,6 +43,8 @@ const TrendsView: React.FC<TrendsViewProps> = ({
 
   if (repos.length === 0) return null;
 
+  const canExpand = summary.length > 250;
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Hero / Summary Section */}
@@ -54,9 +58,26 @@ const TrendsView: React.FC<TrendsViewProps> = ({
               <span className="font-semibold tracking-wide uppercase text-xs">AI Generated Insight</span>
             </div>
             <h2 className="text-3xl font-bold text-white mb-3 capitalize">{topic} Trends</h2>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              {summary}
-            </p>
+            
+            <div 
+              className="relative text-gray-300 text-lg leading-relaxed transition-[max-height] duration-500 ease-in-out overflow-hidden"
+              style={{ maxHeight: isSummaryExpanded ? '1000px' : '84px' }} // Approx 3 lines with 28px line-height
+            >
+              <p>{summary}</p>
+              {!isSummaryExpanded && canExpand && (
+                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none" />
+              )}
+            </div>
+            
+            {canExpand && (
+              <button 
+                onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                className="text-cyan-400 hover:text-cyan-300 text-sm font-bold mt-3 flex items-center group transition-colors"
+              >
+                <span>{isSummaryExpanded ? 'Show Less' : 'Read Full Insight'}</span>
+                <ChevronDown size={18} className={`ml-1.5 transform transition-transform duration-300 ${isSummaryExpanded ? 'rotate-180' : ''}`} />
+              </button>
+            )}
           </div>
           
           <div className="w-full md:w-64 h-32 flex-shrink-0">

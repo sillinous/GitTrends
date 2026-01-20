@@ -7,7 +7,8 @@ import {
   Quote, Smile, Meh, Frown, Wand2, Copy, Check, 
   FileText, Clapperboard, Hash, Briefcase, Share2, Film,
   Map, Rocket, ShieldCheck, DollarSign, Users,
-  Presentation, Cpu, TrendingDown, Zap, Hammer, AlertCircle
+  Presentation, Cpu, TrendingDown, Zap, Hammer, AlertCircle,
+  Layers, Github
 } from './Icons';
 import { analyzeRepository, generateCreativeContent, generateVideoForRepo } from '../services/geminiService';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
@@ -282,6 +283,23 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Commercial Alternatives Subsection */}
+                  {analysis?.businessValue?.commercialAlternatives && analysis.businessValue.commercialAlternatives.length > 0 && (
+                      <div className="bg-gray-900/40 p-6 rounded-2xl border border-gray-800">
+                          <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center">
+                              <Briefcase size={14} className="mr-2 text-rose-500" /> Market Competitors
+                          </h4>
+                          <div className="space-y-2">
+                              {analysis.businessValue.commercialAlternatives.map((alt, i) => (
+                                  <div key={i} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-gray-800/50 group hover:border-rose-500/30 transition-all">
+                                      <span className="text-sm text-gray-300">{alt}</span>
+                                      <span className="text-[9px] font-bold text-rose-400 uppercase tracking-tighter">Paid Alternative</span>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  )}
                 </section>
 
                 {/* Video Generation Section */}
@@ -380,6 +398,40 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                      Signal indicates {analysis?.dailyMomentum?.reduce((acc, curr) => acc + curr.commits, 0) || 0} code iterations in the observation window.
                    </p>
                 </div>
+
+                {/* Related Repositories Section */}
+                {analysis?.relatedRepos && analysis.relatedRepos.length > 0 && (
+                  <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800">
+                    <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-wider">
+                      <Layers size={16} className="mr-2 text-cyan-500" /> Ecosystem & Related Projects
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {analysis.relatedRepos.map((related, i) => {
+                        const owner = new URL(related.url).pathname.split('/')[1] || 'unknown';
+                        return (
+                          <a 
+                            key={i} 
+                            href={related.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block p-4 bg-gray-800/50 rounded-xl border border-gray-800 hover:border-cyan-500/30 transition-all group"
+                          >
+                            <div className="flex items-center space-x-2 mb-1">
+                              <Github size={14} className="text-gray-500 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
+                              <span className="font-bold text-white group-hover:text-cyan-400 transition-colors truncate">{related.name}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2 ml-6">by {owner}</p>
+                            <p className="text-sm text-gray-400 line-clamp-2 mb-3">{related.description}</p>
+                            <div className="flex items-center text-xs text-yellow-500">
+                              <Star size={12} className="mr-1 fill-yellow-500" />
+                              {related.stars} stars
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

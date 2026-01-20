@@ -44,7 +44,8 @@ import {
   Users,
   PieChart as PieChartIcon,
   Presentation,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
 
 export { 
@@ -91,5 +92,6 @@ export {
   Users,
   PieChartIcon,
   Presentation,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 };
