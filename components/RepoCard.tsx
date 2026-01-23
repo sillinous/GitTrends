@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Repository } from '../types';
-import { Star, Code2, Github, Bookmark, BookmarkCheck, Zap, Smile, Meh, Frown, Check, TrendingUp } from './Icons';
+import { Star, Code2, Github, Bookmark, BookmarkCheck, Zap, Smile, Meh, Frown, Check, TrendingUp, ExternalLink } from './Icons';
 import { ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface RepoCardProps {
@@ -41,8 +41,8 @@ const RepoCard: React.FC<RepoCardProps> = ({
 
   const getSentimentVisual = (score: number = 50) => {
     if (score >= 70) return { Icon: Smile, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', label: 'Positive' };
-    if (score >= 40) return { Icon: Meh, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', label: 'Neutral' };
-    return { Icon: Frown, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Negative' };
+    if (score >= 40) return { Icon: Meh, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', label: 'Neutral' };
+    return { Icon: Frown, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', label: 'Negative' };
   };
   
   // Format momentum data for Recharts
@@ -88,6 +88,7 @@ const RepoCard: React.FC<RepoCardProps> = ({
             className={`p-2 rounded-full transition-colors ${
               isBookmarked ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
             }`}
+            title={isBookmarked ? "Remove from Portfolio" : "Add to Portfolio"}
           >
             {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
           </button>
@@ -95,7 +96,10 @@ const RepoCard: React.FC<RepoCardProps> = ({
       </div>
 
       {!showSelection && (
-        <div className={`absolute top-4 left-4 flex items-center px-2 py-1 rounded-md text-xs font-bold ${scoreAttr.bg} ${scoreAttr.color} border ${scoreAttr.border} z-10`}>
+        <div 
+          className={`absolute top-4 left-4 flex items-center px-2 py-1 rounded-md text-xs font-bold ${scoreAttr.bg} ${scoreAttr.color} border ${scoreAttr.border} z-10`}
+          title="AI Trending Score (0-100)"
+        >
           <Zap size={12} className="mr-1 fill-current" />
           {repo.trendingScore || 0}
         </div>
@@ -107,7 +111,7 @@ const RepoCard: React.FC<RepoCardProps> = ({
             <Github size={24} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors truncate">
+            <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors truncate" title={repo.name}>
               {repo.name}
             </h3>
             <a
@@ -116,13 +120,14 @@ const RepoCard: React.FC<RepoCardProps> = ({
               rel="noopener noreferrer"
               onClick={handleLinkClick}
               className="text-xs text-gray-400 hover:text-cyan-500 hover:underline transition-colors block"
+              title={`View ${repo.owner} on GitHub`}
             >
               {repo.owner}
             </a>
           </div>
         </div>
 
-        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+        <p className="text-gray-400 text-sm mb-4 line-clamp-2" title={repo.description}>
           {repo.description}
         </p>
 
@@ -137,10 +142,16 @@ const RepoCard: React.FC<RepoCardProps> = ({
         {/* Momentum Bar Chart */}
         <div className="mt-auto pt-4 bg-gray-950/40 p-4 rounded-xl border border-gray-800/50">
            <div className="flex justify-between items-center mb-3">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 flex items-center">
+              <div 
+                className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 flex items-center"
+                title="7-Day Interest Velocity"
+              >
                  <TrendingUp size={10} className="mr-1.5" /> 7D Velocity
               </div>
-              <div className={`text-[9px] font-black ${scoreAttr.color} uppercase`}>
+              <div 
+                className={`text-[9px] font-black ${scoreAttr.color} uppercase`}
+                title="Projected Growth Rate"
+              >
                  +{Math.round((repo.trendingScore || 0) / 4)}% Growth
               </div>
            </div>
@@ -162,16 +173,38 @@ const RepoCard: React.FC<RepoCardProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-800 mt-4">
-        <div className="flex items-center space-x-3 text-sm">
-          <div className="flex items-center text-yellow-500"><Star size={14} className="mr-1 fill-yellow-500" />{repo.stars}</div>
-          <div className="flex items-center text-cyan-500"><Code2 size={14} className="mr-1" />{repo.language}</div>
+      <div className="flex items-end justify-between pt-4 border-t border-gray-800 mt-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center space-x-3 text-xs text-gray-500 font-medium">
+            <div className="flex items-center space-x-1" title="Total GitHub Stars">
+              <Star size={12} className="text-yellow-500/80 fill-yellow-500/20" />
+              <span>{repo.stars}</span>
+            </div>
+            <div className="flex items-center space-x-1" title="Primary Language">
+              <Code2 size={12} className="text-cyan-500/80" />
+              <span>{repo.language}</span>
+            </div>
+          </div>
+          
+          <div 
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border ${sentBg} ${sentBorder} ${sentColor}`}
+            title={`Sentiment Score: ${repo.sentimentScore || 50}/100`}
+          >
+            <SentimentIcon size={14} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold uppercase tracking-wide">{sentLabel}</span>
+          </div>
         </div>
         
-        <div className={`flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${sentBg} ${sentBorder} ${sentColor}`}>
-          <SentimentIcon size={12} className="mr-1.5" />
-          <span className="font-bold">{repo.sentimentScore || 50}</span>
-        </div>
+        <a
+           href={repo.url}
+           target="_blank"
+           rel="noopener noreferrer"
+           onClick={(e) => e.stopPropagation()}
+           className="flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition-all text-xs font-bold shadow-sm group hover:border-gray-600"
+        >
+           <span>View Repo</span>
+           <ExternalLink size={12} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
+        </a>
       </div>
     </div>
   );

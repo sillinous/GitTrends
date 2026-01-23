@@ -9,17 +9,10 @@ import { Repository, SearchState, PortfolioItem } from './types';
 import { fetchTrendingRepos, generateTrendSummary } from './services/geminiService';
 import { AlertCircle, ExternalLink } from './components/Icons';
 
-// Fix: Correctly extend global Window with AIStudio type to match existing system declarations
-declare global {
-  interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-  }
-
-  interface Window {
-    // FIX: Removed readonly modifier to ensure all declarations of 'aistudio' have identical modifiers.
-    aistudio: AIStudio;
-  }
+// Define AIStudio interface locally
+interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
 }
 
 function App() {
@@ -44,11 +37,15 @@ function App() {
     localStorage.setItem('gitTrendPortfolio', JSON.stringify(portfolio));
   }, [portfolio]);
 
+  // Helper to safely access window.aistudio
+  const getAIStudio = (): AIStudio | undefined => (window as any).aistudio;
+
   // Mandatory: Check for API key selection on mount for Veo models
   useEffect(() => {
     const checkApiKey = async () => {
-      if (window.aistudio) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
+      const aistudio = getAIStudio();
+      if (aistudio) {
+        const hasKey = await aistudio.hasSelectedApiKey();
         if (!hasKey) {
           setNeedsApiKey(true);
         }
@@ -58,8 +55,9 @@ function App() {
   }, []);
 
   const handleSelectApiKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
+    const aistudio = getAIStudio();
+    if (aistudio) {
+      await aistudio.openSelectKey();
       // Assume selection successful after triggering per guidelines to avoid race condition
       setNeedsApiKey(false);
     }

@@ -2,8 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Repository, RepoAnalysis, MultiRepoContentType } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const runWithRetry = async (fn: () => Promise<any>, retries = 6, baseDelay = 5000) => {
   for (let i = 0; i < retries; i++) {
     try {
@@ -99,6 +97,7 @@ const analysisSchema = {
 
 export const fetchTrendingRepos = async (topic: string, days: number, sortBy: 'trending' | 'newest' = 'trending'): Promise<Repository[]> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Analyze GitHub to find top 12 ${sortBy} repositories for topic "${topic}" in the last ${days} days. 
     For each repo, provide: name, owner, description, url, language, stars, tags (string array), trendingScore (0-100), sentimentScore (0-100), 
     AND momentumHistory (an array of exactly 7 integers representing relative interest/stars gained over the last 7 days).
@@ -127,6 +126,7 @@ export const fetchTrendingRepos = async (topic: string, days: number, sortBy: 't
 
 export const generateTrendSummary = async (topic: string, repos: Repository[]): Promise<string> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Synthesize a business-centric market trend report for "${topic}" based on these projects: ${repos.map(r => r.name).join(", ")}.`;
     const response = await runWithRetry(() => ai.models.generateContent({ 
       model: "gemini-3-flash-preview", 
@@ -140,6 +140,7 @@ export const generateTrendSummary = async (topic: string, repos: Repository[]): 
 
 export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Deep Strategic Audit for "${repo.name}" by "${repo.owner}". 
     Evaluate all technical and business aspects. 
     Pay special attention to Maintenance Risk: Identify specific factors like contributor concentration, commit frequency, issue resolution time, and PR backlog.
@@ -184,6 +185,7 @@ export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis>
 };
 
 export const generateCreativeContent = async (repo: Repository, type: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   let instruction = `Generate ${type} content for repository "${repo.name}" by ${repo.owner}. Focus on business value.`;
   
   if (type === 'blog_post') {
@@ -212,6 +214,7 @@ export const generateCreativeContent = async (repo: Repository, type: string): P
 };
 
 export const generateMultiRepoContent = async (repos: Repository[], type: MultiRepoContentType, options: { signal: AbortSignal }): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const repoDetails = repos.map(r => `- ${r.name} (${r.owner}): ${r.description}`).join('\n');
   let prompt = `Analyze this portfolio:\n${repoDetails}\n\n`;
 
