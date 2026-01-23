@@ -9,6 +9,7 @@ export interface Repository {
   tags: string[];
   trendingScore: number;
   sentimentScore?: number;
+  momentumHistory?: number[]; // Array of 7 integers representing relative daily interest
 }
 
 export interface SearchState {
@@ -37,14 +38,15 @@ export interface ContributionInsight {
 
 export interface BusinessValue {
   maintenanceRisk: 'Low' | 'Medium' | 'High';
+  maintenanceRiskFactors?: string[];
   estimatedSavings: string;
   enterpriseReadiness: number;
   licensingNote: string;
   estimatedOpEx: string;
   marketTrajectory: 'Future Standard' | 'Stable Niche' | 'High-Risk Fad' | 'Market Disruption';
-  commercialAlternatives?: string[]; // New: Competitive Mapping
-  saasMonetizationScore?: number; // New: Revenue Potential
-  securityHeuristic?: string; // New: Risk Heuristic
+  commercialAlternatives?: string[];
+  saasMonetizationScore?: number;
+  securityHeuristic?: string;
 }
 
 export interface RepoAnalysis {
@@ -52,13 +54,13 @@ export interface RepoAnalysis {
   keyFeatures: string[];
   sentiment: string;
   commitHistory?: { week: string; commits: number }[];
-  dailyMomentum?: { date: string; commits: number }[]; // New: Granular daily telemetry
+  dailyMomentum?: { date: string; commits: number }[];
   relatedRepos?: RelatedRepo[];
   contributionInsights?: ContributionInsight[];
   businessValue?: BusinessValue;
 }
 
-export type MultiRepoContentType = 
+export type MultiRepoContentType =
   | 'newsletter' 
   | 'comparison' 
   | 'listicle' 
@@ -67,4 +69,7 @@ export type MultiRepoContentType =
   | 'venture_opportunity' 
   | 'stakeholder_pitch'
   | 'merger_acquisition_audit'
-  | 'talent_acquisition_roadmap';
+  | 'talent_acquisition_roadmap'
+  | 'linkedin_deepdive' 
+  | 'technical_newsletter' 
+  | 'social_reel_video';

@@ -4,10 +4,6 @@ import { Repository, RepoAnalysis, MultiRepoContentType } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-/**
- * Enhanced retry logic specifically tuned for Gemini's rate limits (429).
- * Uses exponential backoff with a higher base delay and jitter.
- */
 const runWithRetry = async (fn: () => Promise<any>, retries = 6, baseDelay = 5000) => {
   for (let i = 0; i < retries; i++) {
     try {
@@ -22,10 +18,8 @@ const runWithRetry = async (fn: () => Promise<any>, retries = 6, baseDelay = 500
         errorMsg.includes('quota');
       
       if (isQuotaError && i < retries - 1) {
-        // Exponential backoff: 5s, 10s, 20s, 40s...
         const jitter = Math.random() * 1000;
         const waitTime = (baseDelay * Math.pow(2, i)) + jitter;
-        console.warn(`[Gemini API] Rate limit hit. Attempt ${i + 1}/${retries}. Retrying in ${Math.round(waitTime)}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         continue;
       }
@@ -52,11 +46,10 @@ const analysisSchema = {
     },
     dailyMomentum: {
       type: Type.ARRAY,
-      description: "Daily commit activity for the last 7-10 days",
       items: {
         type: Type.OBJECT,
         properties: {
-          date: { type: Type.STRING, description: "Short date (e.g. Mon, Tue or MM/DD)" },
+          date: { type: Type.STRING },
           commits: { type: Type.INTEGER }
         }
       }
@@ -88,16 +81,17 @@ const analysisSchema = {
       type: Type.OBJECT,
       properties: {
         maintenanceRisk: { type: Type.STRING },
+        maintenanceRiskFactors: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific factors contributing to the maintenance risk level (e.g., Low Bus Factor, Inactive Maintainers, Massive PR Backlog)" },
         estimatedSavings: { type: Type.STRING },
         enterpriseReadiness: { type: Type.NUMBER },
         licensingNote: { type: Type.STRING },
         estimatedOpEx: { type: Type.STRING },
         marketTrajectory: { type: Type.STRING },
-        commercialAlternatives: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Paid products this project competes with" },
-        saasMonetizationScore: { type: Type.NUMBER, description: "Potential to be turned into a SaaS (0-100)" },
-        securityHeuristic: { type: Type.STRING, description: "High-level security risk evaluation" }
+        commercialAlternatives: { type: Type.ARRAY, items: { type: Type.STRING } },
+        saasMonetizationScore: { type: Type.NUMBER },
+        securityHeuristic: { type: Type.STRING }
       },
-      required: ["maintenanceRisk", "estimatedSavings", "enterpriseReadiness", "licensingNote", "estimatedOpEx", "marketTrajectory", "commercialAlternatives", "saasMonetizationScore", "securityHeuristic"]
+      required: ["maintenanceRisk", "maintenanceRiskFactors", "estimatedSavings", "enterpriseReadiness", "licensingNote", "estimatedOpEx", "marketTrajectory", "commercialAlternatives", "saasMonetizationScore", "securityHeuristic"]
     }
   },
   required: ["keyFeatures", "recentActivity", "sentiment", "relatedRepos", "contributionInsights", "businessValue", "dailyMomentum"],
@@ -105,8 +99,11 @@ const analysisSchema = {
 
 export const fetchTrendingRepos = async (topic: string, days: number, sortBy: 'trending' | 'newest' = 'trending'): Promise<Repository[]> => {
   try {
-    let prompt = `Analyze GitHub to find top ${sortBy} repositories for topic "${topic}" in the last ${days} days. 
-    Provide name, owner, description, url, language, stars, tags, trendingScore, sentimentScore. Return as JSON array.`;
+    const prompt = `Analyze GitHub to find top 12 ${sortBy} repositories for topic "${topic}" in the last ${days} days. 
+    For each repo, provide: name, owner, description, url, language, stars, tags (string array), trendingScore (0-100), sentimentScore (0-100), 
+    AND momentumHistory (an array of exactly 7 integers representing relative interest/stars gained over the last 7 days).
+    Your entire response MUST be a single, valid JSON array.
+    CRITICAL: Ensure all string values in the JSON output are properly escaped.`;
 
     const response = await runWithRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -117,7 +114,11 @@ export const fetchTrendingRepos = async (topic: string, days: number, sortBy: 't
       },
     }));
 
-    return JSON.parse(response.text || "[]") as Repository[];
+    let jsonText = response.text || "[]";
+    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+    const match = jsonText.match(jsonRegex);
+    if (match && match[1]) jsonText = match[1];
+    return JSON.parse(jsonText.trim()) as Repository[];
   } catch (error) {
     console.error("Fetch error:", error);
     throw error;
@@ -140,18 +141,9 @@ export const generateTrendSummary = async (topic: string, repos: Repository[]): 
 export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis> => {
   try {
     const prompt = `Deep Strategic Audit for "${repo.name}" by "${repo.owner}". 
-    Evaluate: 
-    - Key Tech Features
-    - Maintenance Risk (Bus factor)
-    - ROI (Man-months saved)
-    - FinOps (100k user cloud cost)
-    - 12-month trajectory prediction
-    - Commercial Competitors: List paid SaaS/Software alternatives.
-    - SaaS Index: How easy is it to monetize?
-    - Security Heuristic: High-level risk check.
-    - HIGH GRANULARITY TELEMETRY: Provide daily commit counts for the last 7-10 days based on recent repo activity.
-    - Contribution Roadmap.`;
-    
+    Evaluate all technical and business aspects. 
+    Pay special attention to Maintenance Risk: Identify specific factors like contributor concentration, commit frequency, issue resolution time, and PR backlog.
+    Return strictly as JSON.`;
     const response = await runWithRetry(() => ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: prompt,
@@ -161,10 +153,13 @@ export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis>
         responseSchema: analysisSchema 
       },
     }));
-    return JSON.parse(response.text || "{}") as RepoAnalysis;
+    let jsonText = response.text || "{}";
+    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+    const match = jsonText.match(jsonRegex);
+    if (match && match[1]) jsonText = match[1];
+    return JSON.parse(jsonText.trim()) as RepoAnalysis;
   } catch (error) {
     console.error("Deep audit error:", error);
-    // Return a structured error fallback to prevent UI crash
     return {
       keyFeatures: ["Information Unavailable"],
       recentActivity: ["Metadata Fetch Failed"],
@@ -174,6 +169,7 @@ export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis>
       dailyMomentum: [],
       businessValue: {
         maintenanceRisk: "High",
+        maintenanceRiskFactors: ["Data Fetch Failure"],
         estimatedSavings: "$0",
         enterpriseReadiness: 0,
         licensingNote: "Check GitHub",
@@ -188,67 +184,71 @@ export const analyzeRepository = async (repo: Repository): Promise<RepoAnalysis>
 };
 
 export const generateCreativeContent = async (repo: Repository, type: string): Promise<string> => {
-  let instruction = `Generate ${type} content for repository "${repo.name}" by ${repo.owner}. Description: ${repo.description}. Focus on business value and unique market position.`;
+  let instruction = `Generate ${type} content for repository "${repo.name}" by ${repo.owner}. Focus on business value.`;
   
   if (type === 'blog_post') {
-    instruction = `Generate a high-quality, professional TECHNICAL BLOG POST about the repository "${repo.name}".
+    instruction = `Generate a high-quality, professional TECHNICAL BLOG POST about the repository "${repo.name}" in Markdown.`;
+  } else if (type === 'video_script') {
+    instruction = `Generate a high-energy, engaging video script for TikTok/YouTube Shorts (60 seconds) about the repository "${repo.name}" by ${repo.owner}.
     Include:
-    1. A compelling title.
-    2. Introduction: What problem does this solve?
-    3. Technical Deep Dive: Key features and architectural advantages.
-    4. Business Impact: ROI, efficiency gains, and market relevance.
-    5. Conclusion: Future outlook.
-    Maintain a sophisticated yet accessible tone for a CTO/Senior Engineer audience. Use Markdown for formatting.`;
+    1. A strong "Hook" in the first 3 seconds (e.g., "Stop building X manually...").
+    2. Quick explanation of the core problem it solves.
+    3. Three rapid-fire features/benefits.
+    4. Call to Action (CTA) to check out the repo.
+    Format the script with clear visual cues [Visual] and spoken dialogue [Audio]. Keep it punchy and fast-paced for a developer/tech audience.`;
   } else if (type === 'pitch') {
-    instruction = `Generate a persuasive Executive ROI Pitch for "${repo.name}". Focus on man-months saved, OpEx reduction, and competitive edge.`;
+    instruction = `Generate a persuasive Executive ROI Pitch for "${repo.name}". Focus on man-months saved and competitive edge.`;
+  } else if (type === 'linkedin') {
+    instruction = `Generate a high-impact B2B LinkedIn post about "${repo.name}" focusing on industry innovation and strategic value.`;
+  } else if (type === 'twitter') {
+    instruction = `Generate a viral-style X thread summary for "${repo.name}" with key technical highlights and why it matters.`;
   }
 
   const response = await runWithRetry(() => ai.models.generateContent({ 
     model: "gemini-3-flash-preview", 
     contents: instruction 
   }));
-  return response.text || "Failed to generate marketing assets.";
+  return response.text || "Failed to generate assets.";
 };
 
-export const generateMultiRepoContent = async (repos: Repository[], type: MultiRepoContentType): Promise<string> => {
-  const repoDetails = repos.map(r => `- ${r.name}: ${r.description}`).join('\n');
-  let prompt = `Strategic Portfolio Synthesis of:\n${repoDetails}\n\n`;
+export const generateMultiRepoContent = async (repos: Repository[], type: MultiRepoContentType, options: { signal: AbortSignal }): Promise<string> => {
+  const repoDetails = repos.map(r => `- ${r.name} (${r.owner}): ${r.description}`).join('\n');
+  let prompt = `Analyze this portfolio:\n${repoDetails}\n\n`;
 
   switch (type) {
-    case 'merger_acquisition_audit':
-      prompt += "Act as a Corporate Strategy Director. Analyze these as an M&A Strategic fit. Evaluate the 'Build vs Buy' calculus for a tech giant. Focus on integration hurdles and IP value.";
+    case 'linkedin_deepdive':
+      prompt += "Act as a Technical Thought Leader. Generate a high-impact LinkedIn post. Highlight the 'Strategic Convergence' of these projects. Use bold headers, emojis for engagement, and a clear call to action regarding technical innovation. Focus on authority and industry trends.";
       break;
-    case 'talent_acquisition_roadmap':
-      prompt += "Act as a Technical Recruiting Lead. Map the specialized talent cluster here. What are the key hiring sources and what is the 'market scarcity' of this specific skillset?";
+    case 'twitter_thread':
+      prompt += "Generate a viral 7-tweet thread for a developer audience. Each tweet must be information-dense and provide a 'Value Bomb'. The thread should build narrative tension about why this specific stack is the future of the ecosystem.";
+      break;
+    case 'technical_newsletter':
+      prompt += "Generate a 'Tech Radar' newsletter entry. Categorize these projects into 'Adopt', 'Trial', and 'Assess'. Provide concise technical justifications for each categorization based on market momentum and architectural novelty.";
       break;
     case 'venture_opportunity':
-      prompt += `ACT AS A TOP-TIER VENTURE CAPITALIST (VC). 
-      Design a comprehensive 'VENTURE OPPORTUNITY ANALYSIS' for this technical stack. 
-      Your output MUST include:
-      1. THE MARKET GAP: What urgent enterprise problem is currently unsolved by these repos alone?
-      2. THE MONETIZATION BLUEPRINT: Detailed SaaS tiers (Free, Pro, Enterprise) with hypothetical pricing.
-      3. REVENUE PROJECTIONS: Estimated Year-1 and Year-3 ARR (Annual Recurring Revenue).
-      4. THE TECHNICAL MOAT: Why is this hard to replicate?
-      5. EXIT STRATEGY: List 3 likely acquirers (e.g., Microsoft, Salesforce, Datadog) and WHY they would buy.
-      6. RISK ASSESSMENT: Regulatory, technical, or market risks.
-      
-      BE BOLD, QUANTITATIVE, AND STRATEGIC.`;
+      prompt += "Produce a GP-level VC Investment Memo. Include Market Alpha, GTM Strategy, ARR Projections, and Defensible Moats.";
       break;
-    case 'stakeholder_pitch':
-      prompt += "Act as a Chief Innovation Officer. Generate an Executive ROI Pitch for a Board of Directors. Focus on digital transformation, OpEx reduction, and competitive acceleration.";
+    case 'merger_acquisition_audit':
+      prompt += "Generate a Corporate Development M&A Audit. Evaluate strategic IP fit and Build vs Buy calculus.";
       break;
     default:
-      prompt += `Generate a high-level ${type} for these repositories.`;
+      prompt += `Generate an executive ${type} summary.`;
   }
 
-  const response = await runWithRetry(() => ai.models.generateContent({
-    model: "gemini-3-pro-preview",
-    contents: prompt,
-    config: {
-      systemInstruction: "You are a world-class Venture Capitalist, M&A Advisor, and Technical Architect. Your analysis is sharp, business-oriented, and identifies massive value where others see code.",
-    }
-  }));
-
+  const abortableRun = () => new Promise<any>(async (resolve, reject) => {
+    const onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
+    options.signal.addEventListener('abort', onAbort);
+    try {
+      const result = await runWithRetry(() => ai.models.generateContent({
+        model: "gemini-3-pro-preview",
+        contents: prompt,
+        config: { systemInstruction: "You are a world-class Strategist and Content Creator. Your output is professional, quantitative, and tailored for high-engagement professional social platforms." }
+      }));
+      resolve(result);
+    } catch (error) { reject(error); } finally { options.signal.removeEventListener('abort', onAbort); }
+  });
+  
+  const response = await abortableRun();
   return response.text || "Strategic synthesis failed.";
 };
 
@@ -260,8 +260,24 @@ export const generateVideoForRepo = async (repo: Repository, options: { signal: 
     config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '9:16' }
   });
   while (!operation.done) {
-    await new Promise(resolve => setTimeout(resolve, 10000));
     if (options.signal.aborted) throw new Error('Aborted');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    operation = await currentAiInstance.operations.getVideosOperation({ operation: operation });
+  }
+  return `${operation.response?.generatedVideos?.[0]?.video?.uri}&key=${process.env.API_KEY}`;
+};
+
+export const generateMultiRepoVideo = async (repos: Repository[], options: { signal: AbortSignal }): Promise<string> => {
+  const currentAiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const repoNames = repos.map(r => r.name).join(", ");
+  let operation = await currentAiInstance.models.generateVideos({
+    model: 'veo-3.1-fast-generate-preview',
+    prompt: `A cinematic portfolio reel for a venture firm. Show a digital vault opening to reveal glowing logos of ${repoNames}. Montage of futuristic network graphs, satellite data visualizations, and high-speed code scrolls. Cinematic blue and gold lighting. 1080p executive style.`,
+    config: { numberOfVideos: 1, resolution: '1080p', aspectRatio: '9:16' }
+  });
+  while (!operation.done) {
+    if (options.signal.aborted) throw new Error('Aborted');
+    await new Promise(resolve => setTimeout(resolve, 10000));
     operation = await currentAiInstance.operations.getVideosOperation({ operation: operation });
   }
   return `${operation.response?.generatedVideos?.[0]?.video?.uri}&key=${process.env.API_KEY}`;

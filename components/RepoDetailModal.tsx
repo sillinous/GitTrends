@@ -8,7 +8,7 @@ import {
   FileText, Clapperboard, Hash, Briefcase, Share2, Film,
   Map, Rocket, ShieldCheck, DollarSign, Users,
   Presentation, Cpu, TrendingDown, Zap, Hammer, AlertCircle,
-  Layers, Github
+  Layers, Github, Sparkles, Layout
 } from './Icons';
 import { analyzeRepository, generateCreativeContent, generateVideoForRepo } from '../services/geminiService';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
@@ -66,10 +66,10 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
   const handleGenerate = async (type: string) => {
     setIsGenerating(true);
     setGeneratedContent('');
+    setContentType(type);
     try {
       const res = await generateCreativeContent(repo, type);
       setGeneratedContent(res);
-      setContentType(type);
     } catch (e) {
       setGeneratedContent("Failed to generate strategic assets.");
     } finally {
@@ -83,7 +83,6 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
     setVideoUrl(null);
     abortControllerRef.current = new AbortController();
 
-    // Progress simulation while waiting for API
     const progressInterval = setInterval(() => {
       setVideoProgress(prev => {
         if (prev >= 95) return prev;
@@ -139,7 +138,6 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
       <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative bg-[#0a0f18] border border-gray-800 rounded-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col">
         
-        {/* Navigation / Header */}
         <div className="sticky top-0 bg-[#0a0f18]/95 backdrop-blur z-10 p-6 border-b border-gray-800 flex justify-between items-start">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shadow-lg">
@@ -154,12 +152,16 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
               <h2 className="text-3xl font-black text-white tracking-tight">{repo.name}</h2>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={28} /></button>
+          <div className="flex items-center space-x-2">
+             <button onClick={() => window.open(repo.url, '_blank')} className="p-2.5 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-xl transition-colors">
+               <Github size={20} />
+             </button>
+             <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors ml-2"><X size={28} /></button>
+          </div>
         </div>
 
         <div className="p-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
           
-          {/* Main Insights Column */}
           <div className="lg:col-span-3 space-y-8">
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center px-4 py-2 bg-gray-900 border border-gray-800 rounded-xl text-yellow-500 font-bold shadow-sm">
@@ -185,29 +187,53 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
             ) : (
               <div className="animate-fade-in space-y-12">
                 
-                {/* Strategic Technical Features */}
-                <div className="bg-gray-900/30 p-6 rounded-2xl border border-gray-800">
-                  <h4 className="text-white font-bold mb-4 flex items-center text-sm uppercase tracking-wider">
+                <div className="bg-gray-900/30 p-6 rounded-2xl border border-gray-800 overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-16 bg-cyan-500/5 blur-[60px] pointer-events-none"></div>
+                  <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-widest">
                     <Hammer size={16} className="mr-2 text-cyan-500" /> Strategic Technical Features
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {analysis?.keyFeatures?.map((feature, i) => (
-                      <div key={i} className="flex items-start space-x-3 p-3 bg-gray-800/30 rounded-xl border border-gray-800/50 hover:border-cyan-500/30 transition-colors group">
-                        <CheckCircle size={16} className="text-cyan-500 mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                        <span className="text-sm text-gray-300 leading-tight">{feature}</span>
+                      <div key={i} className="flex items-start space-x-3 p-4 bg-gray-800/20 rounded-xl border border-gray-800/50 hover:border-cyan-500/30 transition-all hover:bg-gray-800/40 group">
+                        <div className="mt-1 flex-shrink-0">
+                          <CheckCircle size={14} className="text-cyan-500 group-hover:scale-125 transition-transform" />
+                        </div>
+                        <span className="text-sm text-gray-300 leading-normal font-medium">{feature}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Dedicated Strategic Business Valuation Section */}
+                <div className="bg-gradient-to-r from-cyan-900/20 to-blue-900/10 p-6 rounded-2xl border border-cyan-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                      <Sparkles size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold">Generate Technical Deep-Dive</h4>
+                      <p className="text-gray-400 text-xs">Transform this repository's architecture into a viral tech blog post.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleGenerate('blog_post')}
+                    disabled={isGenerating}
+                    className="flex items-center px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                  >
+                    {isGenerating && contentType === 'blog_post' ? (
+                      <Loader2 size={16} className="animate-spin mr-2" />
+                    ) : (
+                      <FileText size={16} className="mr-2" />
+                    )}
+                    Generate Technical Blog
+                  </button>
+                </div>
+
                 <section className="space-y-6">
                   <h4 className="text-white font-bold flex items-center text-sm uppercase tracking-widest">
                     <Briefcase size={16} className="mr-2 text-cyan-500" /> Strategic Business Valuation
                   </h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Enterprise Score */}
                     <div className="bg-gradient-to-b from-gray-900 to-[#0a0f18] p-6 rounded-2xl border border-gray-800">
                       <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-6 flex items-center">
                         <ShieldCheck size={14} className="mr-2 text-emerald-500" /> Enterprise Readiness
@@ -221,7 +247,6 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Maintenance Risk (Bus Factor) */}
                     <div className="bg-gradient-to-b from-gray-900 to-[#0a0f18] p-6 rounded-2xl border border-gray-800">
                       <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-6 flex items-center">
                         <AlertCircle size={14} className={`mr-2 ${getRiskColor(analysis?.businessValue?.maintenanceRisk)}`} /> Maintenance Risk
@@ -229,12 +254,22 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                       <div className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">
                         {analysis?.businessValue?.maintenanceRisk || 'Unknown'}
                       </div>
-                      <p className="text-[10px] text-gray-500 font-bold leading-tight uppercase">
+                      <p className="text-[10px] text-gray-500 font-bold leading-tight uppercase mb-4">
                         Bus Factor & Contribution Velocity
                       </p>
+                      
+                      {analysis?.businessValue?.maintenanceRiskFactors && analysis.businessValue.maintenanceRiskFactors.length > 0 && (
+                        <div className="space-y-1.5 mt-4 pt-4 border-t border-gray-800/50">
+                          {analysis.businessValue.maintenanceRiskFactors.map((factor, idx) => (
+                            <div key={idx} className="flex items-start text-[10px] text-gray-400 group">
+                              <div className={`mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full mr-2 transition-colors ${getRiskColor(analysis?.businessValue?.maintenanceRisk).replace('text-', 'bg-')}`} />
+                              <span className="leading-tight">{factor}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Monetization Score */}
                     <div className="bg-gradient-to-b from-gray-900 to-[#0a0f18] p-6 rounded-2xl border border-gray-800">
                       <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-6 flex items-center">
                         <Zap size={14} className="mr-2 text-yellow-500" /> SaaS Index
@@ -249,157 +284,90 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* ROI / Savings */}
-                    <div className="bg-gray-900/40 p-6 rounded-2xl border border-gray-800 flex flex-col justify-between">
-                      <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center">
-                        <DollarSign size={14} className="mr-2 text-emerald-500" /> Estimated ROI
-                      </h4>
-                      <div>
-                        <div className="text-2xl font-black text-white mb-1">{analysis?.businessValue?.estimatedSavings}</div>
-                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Efficiency Savings / Yr</p>
-                      </div>
-                    </div>
-
-                    {/* OpEx Estimation */}
-                    <div className="bg-gray-900/40 p-6 rounded-2xl border border-gray-800 flex flex-col justify-between">
-                      <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center">
-                        <TrendingDown size={14} className="mr-2 text-rose-500" /> Cloud OpEx Forecast
-                      </h4>
-                      <div>
-                        <div className="text-2xl font-black text-white mb-1">{analysis?.businessValue?.estimatedOpEx}</div>
-                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Monthly Infrastructure</p>
-                      </div>
-                    </div>
-
-                    {/* Licensing & Compliance */}
-                    <div className="bg-gray-900/40 p-6 rounded-2xl border border-gray-800 flex flex-col justify-between">
-                      <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center">
-                        <FileText size={14} className="mr-2 text-blue-500" /> Licensing & Compliance
-                      </h4>
-                      <div>
-                        <div className="text-xl font-black text-white mb-1 line-clamp-1">{analysis?.businessValue?.licensingNote}</div>
-                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Legal Strategy / IP Risk</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Commercial Alternatives Subsection */}
+                  {/* Enhanced Commercial Alternatives Subsection */}
                   {analysis?.businessValue?.commercialAlternatives && analysis.businessValue.commercialAlternatives.length > 0 && (
-                      <div className="bg-gray-900/40 p-6 rounded-2xl border border-gray-800">
-                          <h4 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center">
-                              <Briefcase size={14} className="mr-2 text-rose-500" /> Market Competitors
-                          </h4>
-                          <div className="space-y-2">
+                      <div className="bg-gray-950 p-8 rounded-3xl border border-gray-800 relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 p-12 bg-rose-500/5 blur-[40px] pointer-events-none group-hover:bg-rose-500/10 transition-all"></div>
+                          <div className="flex items-center justify-between mb-8">
+                             <div>
+                                <h4 className="text-white font-black text-lg tracking-tight uppercase">Commercial Displacement Analysis</h4>
+                                <p className="text-gray-500 text-xs font-medium">Identifying primary market friction and build-vs-buy logic.</p>
+                             </div>
+                             <div className="px-3 py-1 bg-rose-500/10 border border-rose-500/30 rounded-full text-[10px] font-black text-rose-500 uppercase tracking-widest">Disruption Thesis</div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {analysis.businessValue.commercialAlternatives.map((alt, i) => (
-                                  <div key={i} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-gray-800/50 group hover:border-rose-500/30 transition-all">
-                                      <span className="text-sm text-gray-300">{alt}</span>
-                                      <span className="text-[9px] font-bold text-rose-400 uppercase tracking-tighter">Paid Alternative</span>
+                                  <div key={i} className="flex flex-col p-5 bg-gray-900/60 rounded-2xl border border-gray-800/80 hover:border-rose-500/30 transition-all hover:bg-gray-900">
+                                      <div className="flex items-center justify-between mb-3">
+                                         <span className="text-sm text-white font-bold">{alt}</span>
+                                         <DollarSign size={14} className="text-rose-500" />
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                         <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-rose-500 w-[70%]" />
+                                         </div>
+                                         <span className="text-[9px] font-black text-gray-500 uppercase">Cost Burden</span>
+                                      </div>
                                   </div>
                               ))}
+                          </div>
+                          
+                          <div className="mt-8 p-4 bg-rose-900/5 rounded-xl border border-rose-900/20 flex items-start space-x-4">
+                             <AlertCircle size={20} className="text-rose-500 flex-shrink-0 mt-0.5" />
+                             <p className="text-xs text-rose-400 leading-relaxed italic">
+                                "The integration of this repository directly erodes the unique value proposition of the aforementioned paid providers by lowering the architectural complexity and cost-of-entry for the specific {repo.language} ecosystem."
+                             </p>
                           </div>
                       </div>
                   )}
                 </section>
 
-                {/* Video Generation Section */}
-                {videoUrl || isVideoGenerating ? (
-                  <div className="bg-gray-900/50 p-6 rounded-2xl border border-cyan-500/20 shadow-xl overflow-hidden relative">
-                    <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-wider">
-                      <Film size={16} className="mr-2 text-pink-500" /> Cinematic Pitch Deck
-                    </h4>
-                    
-                    {isVideoGenerating ? (
-                      <div className="flex flex-col items-center py-12">
-                        <div className="w-full max-w-md bg-gray-800 h-2 rounded-full overflow-hidden mb-6">
-                          <div 
-                            className="bg-gradient-to-r from-cyan-500 to-pink-500 h-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-500"
-                            style={{ width: `${videoProgress}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-cyan-400 text-xs font-black uppercase tracking-widest mb-2 animate-pulse">{videoMessage}</p>
-                        <p className="text-gray-500 text-[10px] mb-8 font-mono">Estimated Time: ~2 mins | {Math.round(videoProgress)}% complete</p>
-                        
-                        <button 
-                          onClick={cancelVideoGeneration}
-                          className="px-6 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
-                        >
-                          Terminate Process
-                        </button>
+                <div className="bg-gray-900/50 p-6 rounded-2xl border border-cyan-500/20 shadow-xl overflow-hidden relative">
+                  <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-wider">
+                    <Film size={16} className="mr-2 text-pink-500" /> Cinematic Pitch Deck
+                  </h4>
+                  
+                  {isVideoGenerating ? (
+                    <div className="flex flex-col items-center py-12">
+                      <div className="w-full max-w-md bg-gray-800 h-2 rounded-full overflow-hidden mb-6">
+                        <div 
+                          className="bg-gradient-to-r from-cyan-500 to-pink-500 h-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-500"
+                          style={{ width: `${videoProgress}%` }}
+                        ></div>
                       </div>
-                    ) : (
-                      <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-800 shadow-2xl">
-                        <video 
-                          src={videoUrl || ''} 
-                          controls 
-                          className="w-full h-full object-contain"
-                          poster={`https://opengraph.githubassets.com/1/${repo.owner}/${repo.name}`}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-
-                {/* Granular Telemetry Chart */}
-                <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800">
-                   <div className="flex justify-between items-center mb-6">
-                      <h4 className="text-white font-bold flex items-center text-sm uppercase tracking-wider">
-                        <Activity size={16} className="mr-2 text-cyan-500" /> 
-                        Momentum: Daily Granularity
-                      </h4>
-                      <div className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded text-[10px] text-cyan-400 font-black uppercase">
-                        Active Window
-                      </div>
-                   </div>
-                   <div className="h-56 w-full">
-                      {analysis?.dailyMomentum && analysis.dailyMomentum.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={analysis.dailyMomentum}>
-                            <defs>
-                              <linearGradient id="colorCommits" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                            <XAxis 
-                              dataKey="date" 
-                              stroke="#4b5563" 
-                              fontSize={10} 
-                              axisLine={false} 
-                              tickLine={false}
-                              dy={10}
-                            />
-                            <YAxis 
-                              stroke="#4b5563" 
-                              fontSize={10} 
-                              axisLine={false} 
-                              tickLine={false} 
-                            />
-                            <Tooltip 
-                              cursor={{ stroke: '#06b6d4', strokeWidth: 1 }} 
-                              contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }} 
-                              itemStyle={{ color: '#06b6d4', fontWeight: 'bold' }}
-                            />
-                            <Area 
-                              type="monotone" 
-                              dataKey="commits" 
-                              stroke="#06b6d4" 
-                              strokeWidth={3}
-                              fillOpacity={1} 
-                              fill="url(#colorCommits)" 
-                              animationDuration={1500}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      ) : <p className="text-center text-gray-600 py-10">Historical momentum data currently unavailable.</p>}
-                   </div>
-                   <p className="mt-4 text-[10px] text-gray-500 text-center uppercase tracking-widest font-bold">
-                     Signal indicates {analysis?.dailyMomentum?.reduce((acc, curr) => acc + curr.commits, 0) || 0} code iterations in the observation window.
-                   </p>
+                      <p className="text-cyan-400 text-xs font-black uppercase tracking-widest mb-2 animate-pulse">{videoMessage}</p>
+                      <p className="text-gray-500 text-[10px] mb-8 font-mono">Estimated Time: ~2 mins | {Math.round(videoProgress)}% complete</p>
+                      
+                      <button 
+                        onClick={cancelVideoGeneration}
+                        className="px-6 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
+                      >
+                        Terminate Process
+                      </button>
+                    </div>
+                  ) : videoUrl ? (
+                    <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-800 shadow-2xl">
+                      <video 
+                        src={videoUrl} 
+                        controls 
+                        className="w-full h-full object-contain"
+                        poster={`https://opengraph.githubassets.com/1/${repo.owner}/${repo.name}`}
+                      />
+                    </div>
+                  ) : (
+                     <div className="text-center py-8">
+                       <p className="text-gray-400 mb-4">Generate a dynamic video pitch for this project.</p>
+                       <button 
+                         onClick={handleGenerateVideo}
+                         className="flex items-center mx-auto px-6 py-3 bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(219,39,119,0.3)]"
+                       >
+                         Generate Cinematic Pitch Video
+                       </button>
+                     </div>
+                  )}
                 </div>
 
-                {/* Related Repositories Section */}
                 {analysis?.relatedRepos && analysis.relatedRepos.length > 0 && (
                   <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800">
                     <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-wider">
@@ -407,7 +375,8 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {analysis.relatedRepos.map((related, i) => {
-                        const owner = new URL(related.url).pathname.split('/')[1] || 'unknown';
+                        const urlObj = new URL(related.url);
+                        const owner = urlObj.pathname.split('/')[1] || 'unknown';
                         return (
                           <a 
                             key={i} 
@@ -416,15 +385,19 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                             rel="noopener noreferrer"
                             className="block p-4 bg-gray-800/50 rounded-xl border border-gray-800 hover:border-cyan-500/30 transition-all group"
                           >
-                            <div className="flex items-center space-x-2 mb-1">
-                              <Github size={14} className="text-gray-500 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
-                              <span className="font-bold text-white group-hover:text-cyan-400 transition-colors truncate">{related.name}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mb-2 ml-6">by {owner}</p>
-                            <p className="text-sm text-gray-400 line-clamp-2 mb-3">{related.description}</p>
-                            <div className="flex items-center text-xs text-yellow-500">
-                              <Star size={12} className="mr-1 fill-yellow-500" />
-                              {related.stars} stars
+                            <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 pt-1">
+                                    <Github size={14} className="text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className="font-bold text-white group-hover:text-cyan-400 transition-colors truncate block">{related.name}</span>
+                                    <p className="text-xs text-gray-500 mb-2">by <span className="text-cyan-600 font-semibold">{owner}</span></p>
+                                    <p className="text-sm text-gray-400 line-clamp-2 mb-3">{related.description}</p>
+                                    <div className="flex items-center text-xs text-yellow-500">
+                                        <Star size={12} className="mr-1 fill-yellow-500" />
+                                        {related.stars} stars
+                                    </div>
+                                </div>
                             </div>
                           </a>
                         );
@@ -436,9 +409,8 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
             )}
           </div>
 
-          {/* Business Studio Sidebar */}
           <div className="space-y-6">
-             <div className="bg-[#0f172a] rounded-2xl border border-cyan-900/30 p-6 shadow-xl">
+             <div className="bg-[#0f172a] rounded-2xl border border-cyan-900/30 p-6 shadow-xl sticky top-[100px]">
                 <h3 className="text-white font-black text-xs uppercase tracking-widest mb-6 flex items-center">
                   <Presentation size={16} className="mr-2 text-pink-500" /> Strategy Studio
                 </h3>
@@ -447,31 +419,31 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                     { id: 'pitch', label: 'ROI Pitch (Exec)', icon: Rocket },
                     { id: 'linkedin', label: 'Strategic B2B Update', icon: Briefcase },
                     { id: 'twitter', label: 'Viral Market Insight', icon: Hash },
+                    { id: 'video_script', label: 'Viral Video Script', icon: Clapperboard },
                     { id: 'blog_post', label: 'Technical Blog Post', icon: FileText },
                   ].map(btn => (
                     <button 
                       key={btn.id}
                       onClick={() => handleGenerate(btn.id)}
                       disabled={isGenerating}
-                      className="w-full flex items-center p-3 bg-gray-900 border border-gray-800 rounded-xl text-xs font-bold text-gray-400 hover:text-white hover:border-cyan-500 transition-all"
+                      className={`w-full flex items-center p-3 border rounded-xl text-xs font-bold transition-all ${
+                        contentType === btn.id 
+                        ? 'bg-cyan-900/30 border-cyan-500 text-white' 
+                        : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-cyan-500'
+                      }`}
                     >
-                      <btn.icon size={16} className="mr-3 text-pink-500" />
+                      <btn.icon size={16} className={`mr-3 ${contentType === btn.id ? 'text-cyan-400' : 'text-pink-500'}`} />
                       {btn.label}
                     </button>
                   ))}
-                  
-                  {/* Video Generator Button */}
-                  <button 
-                    onClick={handleGenerateVideo}
-                    disabled={isVideoGenerating}
-                    className="w-full flex items-center p-3 bg-gradient-to-r from-pink-900/20 to-violet-900/20 border border-pink-500/30 rounded-xl text-xs font-black text-pink-400 hover:text-white hover:border-pink-500 transition-all shadow-[0_0_15px_rgba(236,72,153,0.1)]"
-                  >
-                    <Film size={16} className="mr-3 text-pink-500" />
-                    Cinematic Pitch Video
-                  </button>
                 </div>
 
-                {isGenerating && <div className="mt-6 flex justify-center"><Loader2 size={24} className="animate-spin text-pink-500" /></div>}
+                {isGenerating && (
+                  <div className="mt-6 flex flex-col items-center">
+                    <Loader2 size={24} className="animate-spin text-pink-500 mb-2" />
+                    <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest animate-pulse">Generating Asset...</span>
+                  </div>
+                )}
                 
                 {generatedContent && (
                   <div className="mt-6 animate-fade-in">
@@ -481,12 +453,24 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                         value={generatedContent} 
                         className="w-full h-48 bg-gray-950 text-[11px] font-mono text-gray-400 p-4 rounded-xl border border-gray-800 focus:outline-none scrollbar-thin"
                       />
-                      <button 
-                        onClick={copyToClipboard}
-                        className="absolute bottom-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg border border-gray-700 transition-all"
-                      >
-                        {hasCopied ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
+                      <div className="absolute bottom-2 right-2 flex space-x-2">
+                        <button 
+                          onClick={() => {
+                            if (navigator.share) {
+                              navigator.share({ title: `Audit for ${repo.name}`, text: generatedContent });
+                            }
+                          }}
+                          className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg border border-gray-700 transition-all"
+                        >
+                          <Share2 size={16} />
+                        </button>
+                        <button 
+                          onClick={copyToClipboard}
+                          className="p-2 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg border border-gray-700 transition-all"
+                        >
+                          {hasCopied ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

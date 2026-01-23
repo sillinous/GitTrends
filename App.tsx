@@ -7,6 +7,19 @@ import RepoDetailModal from './components/RepoDetailModal';
 import MultiRepoStudioModal from './components/MultiRepoStudioModal';
 import { Repository, SearchState, PortfolioItem } from './types';
 import { fetchTrendingRepos, generateTrendSummary } from './services/geminiService';
+import { AlertCircle, ExternalLink } from './components/Icons';
+
+// Fix: Correctly extend global Window with AIStudio type and readonly modifier to match existing system declarations
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
+  interface Window {
+    readonly aistudio: AIStudio;
+  }
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState<'trends' | 'portfolio'>('trends');
@@ -15,6 +28,7 @@ function App() {
   const [summary, setSummary] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsApiKey, setNeedsApiKey] = useState<boolean>(false);
   
   // Modal State
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
@@ -29,6 +43,27 @@ function App() {
     localStorage.setItem('gitTrendPortfolio', JSON.stringify(portfolio));
   }, [portfolio]);
 
+  // Mandatory: Check for API key selection on mount for Veo models
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          setNeedsApiKey(true);
+        }
+      }
+    };
+    checkApiKey();
+  }, []);
+
+  const handleSelectApiKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Assume selection successful after triggering per guidelines to avoid race condition
+      setNeedsApiKey(false);
+    }
+  };
+
   const handleSearch = async (newState: SearchState) => {
     setSearchState(newState);
     setLoading(true);
@@ -41,6 +76,10 @@ function App() {
       const generatedSummary = await generateTrendSummary(newState.topic, fetchedRepos);
       setSummary(generatedSummary);
     } catch (err: any) {
+      // If the request fails with "Requested entity was not found.", prompt for key again
+      if (err.message?.includes("Requested entity was not found.")) {
+        setNeedsApiKey(true);
+      }
       setError("Failed to fetch trending repositories. Please try again.");
       console.error(err);
     } finally {
@@ -71,6 +110,42 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 font-sans selection:bg-cyan-500/30">
+      {/* Mandatory API Key Selection UI for Veo Video Generation */}
+      {needsApiKey && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-10 max-w-lg w-full shadow-2xl text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <AlertCircle size={32} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white mb-2">Strategic Access Required</h2>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Veo video generation and high-quality image assets require a paid API key from a billing-enabled GCP project.
+              </p>
+            </div>
+            
+            <div className="p-4 bg-gray-950 rounded-xl border border-gray-800 text-left">
+              <a 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center justify-between text-cyan-500 hover:text-cyan-400 transition-colors"
+              >
+                <span className="text-xs font-bold uppercase tracking-widest">Billing Documentation</span>
+                <ExternalLink size={14} />
+              </a>
+            </div>
+
+            <button
+              onClick={handleSelectApiKey}
+              className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(8,145,178,0.3)]"
+            >
+              Select Paid API Key
+            </button>
+          </div>
+        </div>
+      )}
+
       <Controls 
         initialState={searchState} 
         onSearch={handleSearch} 
@@ -137,7 +212,7 @@ function App() {
       </main>
       
       <footer className="border-t border-gray-900 mt-12 py-8 text-center text-gray-600 text-xs">
-        <p>Built with Gemini 3.0 &bull; Multi-Repo Content Synthesis Enabled</p>
+        <p>Built with Gemini 3 &bull; Multi-Repo Content Synthesis Enabled</p>
       </footer>
 
       {selectedRepo && (

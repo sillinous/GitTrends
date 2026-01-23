@@ -43,7 +43,7 @@ const TrendsView: React.FC<TrendsViewProps> = ({
 
   if (repos.length === 0) return null;
 
-  const canExpand = summary.length > 250;
+  const canExpand = summary.length > 200;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -55,32 +55,32 @@ const TrendsView: React.FC<TrendsViewProps> = ({
           <div className="flex-1">
             <div className="flex items-center space-x-2 text-cyan-400 mb-2">
               <TrendingUp size={20} />
-              <span className="font-semibold tracking-wide uppercase text-xs">AI Generated Insight</span>
+              <span className="font-semibold tracking-wide uppercase text-[10px] tracking-widest">AI Market Pulse</span>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-3 capitalize">{topic} Trends</h2>
+            <h2 className="text-3xl font-black text-white mb-4 capitalize tracking-tight">{topic} Intelligence Report</h2>
             
             <div 
-              className="relative text-gray-300 text-lg leading-relaxed transition-[max-height] duration-500 ease-in-out overflow-hidden"
-              style={{ maxHeight: isSummaryExpanded ? '1000px' : '84px' }} // Approx 3 lines with 28px line-height
+              className="relative text-gray-300 text-lg leading-relaxed transition-[max-height] duration-700 ease-in-out overflow-hidden"
+              style={{ maxHeight: isSummaryExpanded ? '1000px' : '84px' }}
             >
-              <p>{summary}</p>
+              <p className="font-light">{summary}</p>
               {!isSummaryExpanded && canExpand && (
-                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent pointer-events-none" />
               )}
             </div>
             
             {canExpand && (
               <button 
                 onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                className="text-cyan-400 hover:text-cyan-300 text-sm font-bold mt-3 flex items-center group transition-colors"
+                className="text-cyan-500 hover:text-cyan-400 text-xs font-black uppercase tracking-widest mt-6 flex items-center group transition-colors"
               >
-                <span>{isSummaryExpanded ? 'Show Less' : 'Read Full Insight'}</span>
-                <ChevronDown size={18} className={`ml-1.5 transform transition-transform duration-300 ${isSummaryExpanded ? 'rotate-180' : ''}`} />
+                <span>{isSummaryExpanded ? 'Collapse Insight' : 'Expand Strategic Context'}</span>
+                <ChevronDown size={14} className={`ml-2 transform transition-transform duration-300 ${isSummaryExpanded ? 'rotate-180' : ''}`} />
               </button>
             )}
           </div>
           
-          <div className="w-full md:w-64 h-32 flex-shrink-0">
+          <div className="w-full md:w-64 h-32 flex-shrink-0 bg-gray-950/30 rounded-xl p-2 border border-gray-700/50">
              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -88,21 +88,23 @@ const TrendsView: React.FC<TrendsViewProps> = ({
                     cx="50%"
                     cy="50%"
                     innerRadius={30}
-                    outerRadius={50}
+                    outerRadius={45}
                     paddingAngle={5}
                     dataKey="value"
+                    animationBegin={200}
+                    animationDuration={1000}
                   >
                     {languageData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', fontSize: '10px' }}
                     itemStyle={{ color: '#f3f4f6' }}
                   />
                 </PieChart>
              </ResponsiveContainer>
-             <div className="text-center text-xs text-gray-500 -mt-2">Tech Stack Dist</div>
+             <div className="text-center text-[9px] font-black text-gray-600 uppercase tracking-widest -mt-1">Stack Variance</div>
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Repository } from '../types';
-import { Star, Code2, Github, Bookmark, BookmarkCheck, Zap, Smile, Meh, Frown, Check } from './Icons';
+import { Star, Code2, Github, Bookmark, BookmarkCheck, Zap, Smile, Meh, Frown, Check, TrendingUp } from './Icons';
+import { ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface RepoCardProps {
   repo: Repository;
@@ -33,9 +34,9 @@ const RepoCard: React.FC<RepoCardProps> = ({
   };
 
   const getScoreAttributes = (score: number) => {
-    if (score >= 80) return { color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' };
-    if (score >= 60) return { color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' };
-    return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+    if (score >= 80) return { color: 'text-pink-400', hex: '#ec4899', bg: 'bg-pink-500/10', border: 'border-pink-500/20' };
+    if (score >= 60) return { color: 'text-cyan-400', hex: '#22d3ee', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' };
+    return { color: 'text-blue-400', hex: '#60a5fa', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
   };
 
   const getSentimentVisual = (score: number = 50) => {
@@ -43,6 +44,18 @@ const RepoCard: React.FC<RepoCardProps> = ({
     if (score >= 40) return { Icon: Meh, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', label: 'Neutral' };
     return { Icon: Frown, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Negative' };
   };
+  
+  // Format momentum data for Recharts
+  const momentumData = React.useMemo(() => {
+    if (repo.momentumHistory && repo.momentumHistory.length === 7) {
+      return repo.momentumHistory.map((val, i) => ({ day: i, v: val }));
+    }
+    // Fallback if data missing
+    return Array.from({ length: 7 }, (_, i) => ({ 
+      day: i, 
+      v: Math.floor((repo.trendingScore || 50) * (0.5 + Math.random() * 0.5)) 
+    }));
+  }, [repo.momentumHistory, repo.trendingScore]);
 
   const scoreAttr = getScoreAttributes(repo.trendingScore || 0);
   const { Icon: SentimentIcon, color: sentColor, bg: sentBg, border: sentBorder, label: sentLabel } = getSentimentVisual(repo.sentimentScore);
@@ -51,7 +64,7 @@ const RepoCard: React.FC<RepoCardProps> = ({
     <div 
       onClick={() => onClick && onClick(repo)}
       className={`group relative bg-gray-900 border rounded-xl p-6 transition-all duration-300 flex flex-col h-full animate-slide-up cursor-pointer ${
-        isSelected ? 'border-cyan-500 ring-1 ring-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'border-gray-800 hover:border-gray-700 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]'
+        isSelected ? 'border-cyan-500 ring-2 ring-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'border-gray-800 hover:border-gray-700 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]'
       }`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -88,39 +101,68 @@ const RepoCard: React.FC<RepoCardProps> = ({
         </div>
       )}
 
-      <div className="flex items-center space-x-3 mb-4 mt-8">
-        <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-cyan-950/30 group-hover:text-cyan-400 transition-colors">
-          <Github size={24} />
+      <div className="flex-grow flex flex-col">
+        <div className="flex items-center space-x-3 mb-4 mt-8">
+          <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-cyan-950/30 group-hover:text-cyan-400 transition-colors">
+            <Github size={24} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors truncate">
+              {repo.name}
+            </h3>
+            <a
+              href={`https://github.com/${repo.owner}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleLinkClick}
+              className="text-xs text-gray-400 hover:text-cyan-500 hover:underline transition-colors block"
+            >
+              {repo.owner}
+            </a>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors truncate max-w-[180px]">
-            {repo.name}
-          </h3>
-          <a
-            href={`https://github.com/${repo.owner}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleLinkClick}
-            className="text-xs text-gray-400 hover:text-cyan-500 hover:underline transition-colors block"
-          >
-            {repo.owner}
-          </a>
+
+        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+          {repo.description}
+        </p>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {repo.tags?.slice(0, 2).map((tag, idx) => (
+            <span key={idx} className="px-2 py-1 text-[10px] uppercase tracking-wider font-semibold bg-gray-800 text-gray-300 rounded-md">
+              {tag}
+            </span>
+          ))}
+        </div>
+        
+        {/* Momentum Bar Chart */}
+        <div className="mt-auto pt-4 bg-gray-950/40 p-4 rounded-xl border border-gray-800/50">
+           <div className="flex justify-between items-center mb-3">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 flex items-center">
+                 <TrendingUp size={10} className="mr-1.5" /> 7D Velocity
+              </div>
+              <div className={`text-[9px] font-black ${scoreAttr.color} uppercase`}>
+                 +{Math.round((repo.trendingScore || 0) / 4)}% Growth
+              </div>
+           </div>
+           <div className="h-12 w-full">
+             <ResponsiveContainer width="100%" height="100%">
+               <BarChart data={momentumData}>
+                 <Bar dataKey="v" radius={[2, 2, 0, 0]} animationDuration={1000}>
+                    {momentumData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={scoreAttr.hex} 
+                        fillOpacity={0.3 + (index * 0.1)} 
+                      />
+                    ))}
+                 </Bar>
+               </BarChart>
+             </ResponsiveContainer>
+           </div>
         </div>
       </div>
 
-      <p className="text-gray-400 text-sm mb-6 line-clamp-3 flex-grow">
-        {repo.description}
-      </p>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {repo.tags?.slice(0, 3).map((tag, idx) => (
-          <span key={idx} className="px-2 py-1 text-[10px] uppercase tracking-wider font-semibold bg-gray-800 text-gray-300 rounded-md">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between pt-4 border-t border-gray-800 mt-auto">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-800 mt-4">
         <div className="flex items-center space-x-3 text-sm">
           <div className="flex items-center text-yellow-500"><Star size={14} className="mr-1 fill-yellow-500" />{repo.stars}</div>
           <div className="flex items-center text-cyan-500"><Code2 size={14} className="mr-1" />{repo.language}</div>
