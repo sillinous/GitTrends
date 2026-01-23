@@ -27,6 +27,7 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
   const [hasCopied, setHasCopied] = useState(false);
   
   // Video specific state
+  const [showVideoConfirm, setShowVideoConfirm] = useState(false);
   const [isVideoGenerating, setIsVideoGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -284,7 +285,6 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Enhanced Commercial Alternatives Subsection */}
                   {analysis?.businessValue?.commercialAlternatives && analysis.businessValue.commercialAlternatives.length > 0 && (
                       <div className="bg-gray-950 p-8 rounded-3xl border border-gray-800 relative overflow-hidden group">
                           <div className="absolute top-0 right-0 p-12 bg-rose-500/5 blur-[40px] pointer-events-none group-hover:bg-rose-500/10 transition-all"></div>
@@ -327,6 +327,33 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                   <h4 className="text-white font-bold mb-6 flex items-center text-sm uppercase tracking-wider">
                     <Film size={16} className="mr-2 text-pink-500" /> Cinematic Pitch Deck
                   </h4>
+
+                  {showVideoConfirm && (
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8 rounded-2xl z-20 animate-fade-in">
+                      <Film size={32} className="text-pink-500 mb-4" />
+                      <h3 className="text-xl font-black text-white mb-2">Confirm Video Generation</h3>
+                      <p className="text-gray-400 text-center text-sm max-w-sm mb-6">
+                        This will initiate the Veo AI model to generate a cinematic video. This process can take several minutes and is resource-intensive.
+                      </p>
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={() => setShowVideoConfirm(false)}
+                          className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowVideoConfirm(false);
+                            handleGenerateVideo();
+                          }}
+                          className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-colors"
+                        >
+                          Proceed
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
                   {isVideoGenerating ? (
                     <div className="flex flex-col items-center py-12">
@@ -359,7 +386,7 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
                      <div className="text-center py-8">
                        <p className="text-gray-400 mb-4">Generate a dynamic video pitch for this project.</p>
                        <button 
-                         onClick={handleGenerateVideo}
+                         onClick={() => setShowVideoConfirm(true)}
                          className="flex items-center mx-auto px-6 py-3 bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(219,39,119,0.3)]"
                        >
                          Generate Cinematic Pitch Video
@@ -497,3 +524,4 @@ const RepoDetailModal: React.FC<RepoDetailModalProps> = ({ repo, onClose }) => {
 };
 
 export default RepoDetailModal;
+    

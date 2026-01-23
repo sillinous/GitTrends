@@ -9,7 +9,7 @@ import { Repository, SearchState, PortfolioItem } from './types';
 import { fetchTrendingRepos, generateTrendSummary } from './services/geminiService';
 import { AlertCircle, ExternalLink } from './components/Icons';
 
-// Fix: Correctly extend global Window with AIStudio type and readonly modifier to match existing system declarations
+// Fix: Correctly extend global Window with AIStudio type to match existing system declarations
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -17,6 +17,7 @@ declare global {
   }
 
   interface Window {
+    // Fix: Added readonly modifier to ensure all declarations of 'aistudio' have identical modifiers.
     readonly aistudio: AIStudio;
   }
 }
