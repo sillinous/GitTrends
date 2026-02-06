@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import Controls from './components/Controls';
 import TrendsView from './components/TrendsView';
+import TechRadarView from './components/TechRadarView';
 import PortfolioView from './components/PortfolioView';
 import RepoDetailModal from './components/RepoDetailModal';
 import MultiRepoStudioModal from './components/MultiRepoStudioModal';
+import ExportModal from './components/ExportModal';
 import { Repository, SearchState, PortfolioItem } from './types';
 import { fetchTrendingRepos, generateTrendSummary } from './services/geminiService';
-import { AlertCircle, ExternalLink } from './components/Icons';
+import { AlertCircle, ExternalLink, Download } from './components/Icons';
 
 // Define AIStudio interface locally
 interface AIStudio {
@@ -16,7 +18,7 @@ interface AIStudio {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'trends' | 'portfolio'>('trends');
+  const [activeTab, setActiveTab] = useState<'trends' | 'radar' | 'portfolio'>('trends');
   const [searchState, setSearchState] = useState<SearchState>({ topic: 'AI', days: 5, sortBy: 'trending' });
   const [repos, setRepos] = useState<Repository[]>([]);
   const [summary, setSummary] = useState<string>('');
@@ -27,6 +29,7 @@ function App() {
   // Modal State
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [studioRepos, setStudioRepos] = useState<Repository[] | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => {
     const saved = localStorage.getItem('gitTrendPortfolio');
@@ -152,27 +155,45 @@ function App() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex space-x-6 border-b border-gray-800 mb-8">
+        <div className="flex justify-between items-center border-b border-gray-800 mb-8">
+          <div className="flex space-x-6">
+            <button
+              onClick={() => setActiveTab('trends')}
+              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+                activeTab === 'trends' ? 'text-cyan-400' : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Discover Trends
+              {activeTab === 'trends' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('radar')}
+              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+                activeTab === 'radar' ? 'text-emerald-400' : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Tech Radar
+              {activeTab === 'radar' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-400 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('portfolio')}
+              className={`pb-3 px-1 text-sm font-medium transition-colors relative flex items-center ${
+                activeTab === 'portfolio' ? 'text-cyan-400' : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              My Portfolio
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'portfolio' ? 'bg-cyan-900/50 text-cyan-300' : 'bg-gray-800 text-gray-400'}`}>
+                {portfolio.length}
+              </span>
+              {activeTab === 'portfolio' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 rounded-t-full" />}
+            </button>
+          </div>
           <button
-            onClick={() => setActiveTab('trends')}
-            className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
-              activeTab === 'trends' ? 'text-cyan-400' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            onClick={() => setShowExport(true)}
+            className="flex items-center px-4 py-2 text-xs font-bold text-gray-400 hover:text-white bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 rounded-lg transition-all"
           >
-            Discover Trends
-            {activeTab === 'trends' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className={`pb-3 px-1 text-sm font-medium transition-colors relative flex items-center ${
-              activeTab === 'portfolio' ? 'text-cyan-400' : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            My Portfolio
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'portfolio' ? 'bg-cyan-900/50 text-cyan-300' : 'bg-gray-800 text-gray-400'}`}>
-              {portfolio.length}
-            </span>
-            {activeTab === 'portfolio' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 rounded-t-full" />}
+            <Download size={14} className="mr-2" />
+            Export
           </button>
         </div>
 
@@ -187,12 +208,21 @@ function App() {
           ) : (
             <>
               {activeTab === 'trends' && (
-                <TrendsView 
-                  repos={repos} 
+                <TrendsView
+                  repos={repos}
                   portfolioItems={portfolio}
                   onTogglePortfolio={togglePortfolioItem}
                   onRepoClick={setSelectedRepo}
                   summary={summary}
+                  topic={searchState.topic}
+                />
+              )}
+              {activeTab === 'radar' && (
+                <TechRadarView
+                  repos={repos}
+                  portfolioItems={portfolio}
+                  onTogglePortfolio={togglePortfolioItem}
+                  onRepoClick={setSelectedRepo}
                   topic={searchState.topic}
                 />
               )}
@@ -222,9 +252,19 @@ function App() {
       )}
 
       {studioRepos && (
-        <MultiRepoStudioModal 
+        <MultiRepoStudioModal
           repos={studioRepos}
           onClose={() => setStudioRepos(null)}
+        />
+      )}
+
+      {showExport && (
+        <ExportModal
+          repos={repos}
+          portfolio={portfolio}
+          summary={summary}
+          topic={searchState.topic}
+          onClose={() => setShowExport(false)}
         />
       )}
     </div>

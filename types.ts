@@ -73,3 +73,7 @@ export type MultiRepoContentType =
   | 'linkedin_deepdive' 
   | 'technical_newsletter' 
   | 'social_reel_video';
+
+export type RadarRing = 'adopt' | 'trial' | 'assess' | 'hold';
+
+export type ExportFormat = 'markdown' | 'json' | 'csv';
